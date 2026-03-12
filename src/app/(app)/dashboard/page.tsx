@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import StatCard from "@/components/StatCard"
-
+import PesoChart from "@/components/PesoChart"
 type Registro = {
   id: string
   fecha: string
@@ -70,7 +70,18 @@ export default function Dashboard() {
                 color="text-yellow-400"
               />
             </div>
-
+            {/* Gráfico de peso */}
+            <div className="mb-8">
+              <PesoChart
+                datos={registros
+                  .filter((r) => r.peso !== null)
+                  .map((r) => ({
+                    fecha: r.fecha,
+                    peso: r.peso as number,
+                  }))
+                  .reverse()}
+              />
+            </div>
             {/* Tabla de registros recientes */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">Registros recientes</h2>

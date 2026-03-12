@@ -16,9 +16,18 @@ export default function Registro() {
     setCargando(true)
     setError("")
 
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setError("Tenés que estar logueado para guardar.")
+      setCargando(false)
+      return
+    }
+
     const { error } = await supabase
       .from("registros_diarios")
       .insert({
+        user_id: user.id,
         peso: peso ? parseFloat(peso) : null,
         km: km ? parseFloat(km) : null,
         tiempo: tiempo || null,
