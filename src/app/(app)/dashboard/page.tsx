@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { usePerfil } from "@/hooks/usePerfil"
 import StatCard from "@/components/StatCard"
 import PesoChart from "@/components/PesoChart"
+
 type Registro = {
   id: string
   fecha: string
@@ -14,6 +16,7 @@ type Registro = {
 }
 
 export default function Dashboard() {
+  const { perfil, cargando: cargandoPerfil } = usePerfil()
   const [registros, setRegistros] = useState<Registro[]>([])
   const [cargando, setCargando] = useState(true)
 
@@ -37,15 +40,45 @@ export default function Dashboard() {
     cargarDatos()
   }, [])
 
-  // Calculos para las tarjetas
   const ultimoPeso = registros.find((r) => r.peso !== null)?.peso
   const totalKmMes = registros.reduce((acc, r) => acc + (r.km || 0), 0)
   const racha = registros.filter((r) => r.km && r.km > 0).length
 
+  if (cargandoPerfil) {
+    return (
+      <main className="min-h-screen bg-gray-950 text-white p-8">
+        <p className="text-gray-400">Cargando...</p>
+      </main>
+    )
+  }
+
+  // Vista del nutricionista
+  if (perfil?.rol === "nutricionista") {
+    return (
+      <main className="min-h-screen bg-gray-950 text-white p-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold text-emerald-400 mb-2">
+            Bienvenida, {perfil.nombre} 👋
+          </h1>
+          <p className="text-gray-400 mb-8">Panel del nutricionista</p>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold mb-4">👥 Tus pacientes</h2>
+            <p className="text-gray-400">Próximamente — lista de pacientes y sus progresos.</p>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  // Vista del paciente
   return (
     <main className="min-h-screen bg-gray-950 text-white p-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-emerald-400 mb-8">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-emerald-400 mb-2">
+          Bienvenido, {perfil?.nombre ?? "Paciente"} 👋
+        </h1>
+        <p className="text-gray-400 mb-8">Tu progreso de hoy</p>
 
         {cargando ? (
           <p className="text-gray-400">Cargando datos...</p>
@@ -70,7 +103,7 @@ export default function Dashboard() {
                 color="text-yellow-400"
               />
             </div>
-            {/* Gráfico de peso */}
+
             <div className="mb-8">
               <PesoChart
                 datos={registros
@@ -82,7 +115,7 @@ export default function Dashboard() {
                   .reverse()}
               />
             </div>
-            {/* Tabla de registros recientes */}
+
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">Registros recientes</h2>
               {registros.length === 0 ? (
