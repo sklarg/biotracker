@@ -11,6 +11,13 @@ export default function Registro() {
   const [guardado, setGuardado] = useState(false)
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
+  const [calorias, setCalorias] = useState<null | {
+    total: number
+    detalle: { comida: string; calorias: number }[]
+    mensaje: string
+  }>(null)
+  const [analizando, setAnalizando] = useState(false)
+  const [errorCalorias, setErrorCalorias] = useState("")
 
   async function handleGuardar() {
     setCargando(true)
@@ -47,7 +54,33 @@ export default function Registro() {
     setKm("")
     setTiempo("")
     setComidas("")
+    setCalorias(null)
     setTimeout(() => setGuardado(false), 3000)
+  }
+
+  async function handleAnalizarCalorias() {
+    if (!comidas) return
+    setAnalizando(true)
+    setErrorCalorias("")
+    setCalorias(null)
+
+    try {
+      const res = await fetch("/api/calorias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comidas }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        setErrorCalorias(data.error)
+      } else {
+        setCalorias(data)
+      }
+    } catch {
+      setErrorCalorias("Error al conectar con la IA.")
+    }
+
+    setAnalizando(false)
   }
 
   return (
@@ -119,8 +152,39 @@ export default function Registro() {
             value={comidas}
             onChange={(e) => setComidas(e.target.value)}
             rows={4}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 resize-none mb-3"
           />
+
+          <button
+            onClick={handleAnalizarCalorias}
+            disabled={analizando || !comidas}
+            className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+          >
+            {analizando ? "Analizando..." : "✨ Estimar calorías con IA"}
+          </button>
+
+          {errorCalorias && (
+            <p className="text-red-400 text-sm mt-3">❌ {errorCalorias}</p>
+          )}
+
+          {calorias && (
+            <div className="mt-4 bg-gray-800 rounded-xl p-4">
+              <p className="text-emerald-400 font-bold text-lg mb-3">
+                Total estimado: {calorias.total} kcal
+              </p>
+              <div className="space-y-1 mb-3">
+                {calorias.detalle.map((item, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-gray-300">{item.comida}</span>
+                    <span className="text-gray-400">{item.calorias} kcal</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-gray-400 text-sm border-t border-gray-700 pt-3">
+                💬 {calorias.mensaje}
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Botón */}
